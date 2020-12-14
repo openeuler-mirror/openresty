@@ -1,0 +1,270 @@
+From 18af66624114a213b033bc5e5e42154c48e404ae Mon Sep 17 00:00:00 2001
+From: fu_changjie <fu_changjie@qq.com>
+Date: Thu, 10 Dec 2020 15:29:20 +0800
+Subject: [PATCH] add option out-dir on configure and use different Makefile
+
+---
+ configure | 86 ++++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 47 insertions(+), 39 deletions(-)
+
+diff --git a/configure b/configure
+index d461294..cad4913 100755
+--- a/configure
++++ b/configure
+@@ -127,6 +127,7 @@ my $prefix = '/usr/local/openresty';
+ my $ngx_sbin;
+ my %resty_opts;
+ my $dry_run;
++my $out_dir = 'build';
+ my @ngx_rpaths;
+ my $cc;
+ my $cores;
+@@ -160,6 +161,11 @@ for my $opt (@ARGV) {
+         $dry_run = 1;
+         next;
+     }
++    
++    if ($opt =~ /^--out-dir=(.+)/) {
++        $out_dir = $1;
++        next;
++    }
+ 
+     if ($opt =~ /^--with-make=(.*)/) {
+         $resty_opts{make} = $1;
+@@ -422,10 +428,10 @@ my $cmd = "sh ./configure --prefix=$ngx_prefix"
+ 
+ shell $cmd, $dry_run;
+ 
+-push @make_cmds, "cd $root_dir/build/$ngx_dir && "
++push @make_cmds, "cd $root_dir/$out_dir/$ngx_dir && "
+     . "\$(MAKE)";
+ 
+-push @make_install_cmds, "cd $root_dir/build/$ngx_dir && "
++push @make_install_cmds, "cd $root_dir/$out_dir/$ngx_dir && "
+     . "\$(MAKE) install DESTDIR=\$(DESTDIR)";
+ 
+ push @make_install_cmds,
+@@ -620,18 +626,18 @@ _END_
+         #unshift @ngx_cc_opts, '-O2';
+     }
+ 
+-    if (-d 'build') {
+-        system("rm -rf build") == 0 or
+-            die "failed to remove directory build/.\n";
++    if (-d "$out_dir") {
++        system("rm -rf $out_dir") == 0 or
++            die "failed to remove directory $out_dir/.\n";
+     }
+ 
+-    if (-e 'build') {
+-        die "file or directory \"build\" already exists. please remove it ",
++    if (-e "$out_dir") {
++        die "file or directory \"$out_dir\" already exists. please remove it ",
+             "first.\n";
+     }
+-    shell "cp -rp bundle/ build";
++    shell "cp -rp bundle/ $out_dir";
+ 
+-    cd 'build';
++    cd "$out_dir";
+ 
+     push @make_install_cmds, "mkdir -p \$(DESTDIR)$prefix/",
+         "-cp $root_dir/COPYRIGHT \$(DESTDIR)$prefix/";
+@@ -776,8 +782,8 @@ _END_
+         }
+ 
+         if ($on_solaris) {
+-            $extra_opts .= " INSTALL_X='$root_dir/build/install -m 0755' " .
+-                    "INSTALL_F='$root_dir/build/install -m 0644'";
++            $extra_opts .= " INSTALL_X='$root_dir/$out_dir/install -m 0755' " .
++                    "INSTALL_F='$root_dir/$out_dir/install -m 0644'";
+         }
+ 
+         if (defined $cc) {
+@@ -837,11 +843,11 @@ _END_
+                                        "include", "luajit-2.1");
+         }
+ 
+-        push @make_cmds, "cd $root_dir/build/$luajit_src && "
++        push @make_cmds, "cd $root_dir/$out_dir/$luajit_src && "
+             . "\$(MAKE)$extra_opts PREFIX=$luajit_prefix";
+ 
+         my $abs_luajit_src =
+-            File::Spec->rel2abs(File::Spec->catfile($root_dir, "build",
++            File::Spec->rel2abs(File::Spec->catfile($root_dir, "$out_dir",
+                                                     $luajit_src),
+                                 $root_dir);
+ 
+@@ -979,10 +985,10 @@ _EOC_
+                 $extra_opts .= " CC=cc";
+             }
+ 
+-            push @make_cmds, "cd $root_dir/build/$dir && ".
++            push @make_cmds, "cd $root_dir/$out_dir/$dir && ".
+                 "\$(MAKE)$extra_opts";
+ 
+-            push @make_install_cmds, "cd $root_dir/build/$dir && " .
++            push @make_install_cmds, "cd $root_dir/$out_dir/$dir && " .
+                 "\$(MAKE) install$extra_opts";
+         }
+ 
+@@ -994,7 +1000,7 @@ _EOC_
+                 "LUA_LIB_DIR=$lualib_prefix";
+ 
+             if ($on_solaris) {
+-                $extra_opts .= " INSTALL=$root_dir/build/install";
++                $extra_opts .= " INSTALL=$root_dir/$out_dir/install";
+             }
+ 
+             if ($opts->{debug}) {
+@@ -1017,10 +1023,10 @@ _EOC_
+                 $extra_opts .= " CC=cc";
+             }
+ 
+-            push @make_cmds, "cd $root_dir/build/$dir && " .
++            push @make_cmds, "cd $root_dir/$out_dir/$dir && " .
+                 "\$(MAKE)$extra_opts";
+ 
+-            push @make_install_cmds, "cd $root_dir/build/$dir && " .
++            push @make_install_cmds, "cd $root_dir/$out_dir/$dir && " .
+                 "\$(MAKE) install$extra_opts";
+         }
+ 
+@@ -1047,7 +1053,7 @@ _EOC_
+             }
+ 
+             if ($on_solaris) {
+-                $extra_opts .= " INSTALL=$root_dir/build/install";
++                $extra_opts .= " INSTALL=$root_dir/$out_dir/install";
+                 if ($opts->{debug}) {
+                     $extra_opts .= " CFLAGS=\"-g -O -Wall\"";
+                 }
+@@ -1068,10 +1074,10 @@ _EOC_
+                 $extra_opts .= " CC=cc";
+             }
+ 
+-            push @make_cmds, "cd $root_dir/build/$dir && ".
++            push @make_cmds, "cd $root_dir/$out_dir/$dir && ".
+                 "\$(MAKE)$extra_opts";
+ 
+-            push @make_install_cmds, "cd $root_dir/build/$dir && " .
++            push @make_install_cmds, "cd $root_dir/$out_dir/$dir && " .
+                 "\$(MAKE) install$extra_opts";
+         }
+ 
+@@ -1098,7 +1104,7 @@ _EOC_
+             }
+ 
+             if ($on_solaris) {
+-                $extra_opts .= " INSTALL=$root_dir/build/install";
++                $extra_opts .= " INSTALL=$root_dir/$out_dir/install";
+                 if ($opts->{debug}) {
+                     $extra_opts .= " CFLAGS=\"-g -O -Wall\"";
+ 
+@@ -1120,10 +1126,10 @@ _EOC_
+                 $extra_opts .= " CC=cc";
+             }
+ 
+-            push @make_cmds, "cd $root_dir/build/$dir && ".
++            push @make_cmds, "cd $root_dir/$out_dir/$dir && ".
+                 "\$(MAKE)$extra_opts";
+ 
+-            push @make_install_cmds, "cd $root_dir/build/$dir && " .
++            push @make_install_cmds, "cd $root_dir/$out_dir/$dir && " .
+                 "\$(MAKE) install$extra_opts";
+         }
+ 
+@@ -1146,8 +1152,8 @@ _EOC_
+         } else {
+             $target_dir = "\$(DESTDIR)$prefix/bin/";
+         }
+-        push @make_install_cmds, "cd $root_dir/build/$opm_dir && "
+-             . "$root_dir/build/install bin/* $target_dir";
++        push @make_install_cmds, "cd $root_dir/$out_dir/$opm_dir && "
++             . "$root_dir/$out_dir/install bin/* $target_dir";
+     }
+ 
+     # configure resty-cli:
+@@ -1160,8 +1166,8 @@ _EOC_
+         } else {
+             $target_dir = "\$(DESTDIR)$prefix/bin/";
+         }
+-        push @make_install_cmds, "cd $root_dir/build/$resty_cli_dir && "
+-             . "$root_dir/build/install bin/* $target_dir";
++        push @make_install_cmds, "cd $root_dir/$out_dir/$resty_cli_dir && "
++             . "$root_dir/$out_dir/install bin/* $target_dir";
+ 
+         if ($platform ne 'msys') {
+             # patch the resty script:
+@@ -1169,7 +1175,7 @@ _EOC_
+             print "patching the resty script with hard-coded nginx binary ",
+                   "path...\n";
+ 
+-            my $resty_bin = "$root_dir/build/$resty_cli_dir/bin/resty";
++            my $resty_bin = "$root_dir/$out_dir/$resty_cli_dir/bin/resty";
+             open my $in, $resty_bin
+                 or die "Cannot open $resty_bin for reading: $!\n";
+             my ($new, $found);
+@@ -1199,8 +1205,8 @@ _EOC_
+     # configure restydoc indexes
+ 
+     push @make_install_cmds,
+-        "cp $root_dir/build/resty.index \$(DESTDIR)$prefix/",
+-        "cp -r $root_dir/build/pod \$(DESTDIR)$prefix/";
++        "cp $root_dir/$out_dir/resty.index \$(DESTDIR)$prefix/",
++        "cp -r $root_dir/$out_dir/pod \$(DESTDIR)$prefix/";
+ 
+     # prepare nginx configure line
+ 
+@@ -1244,9 +1250,9 @@ sub add_lua_lib ($$$) {
+ 
+         my $extra_opts =
+         " DESTDIR=\$(DESTDIR) LUA_LIB_DIR=$lualib_prefix"
+-        ." INSTALL=$root_dir/build/install";
++        ." INSTALL=$root_dir/$out_dir/install";
+ 
+-        push @make_install_cmds, "cd $root_dir/build/$dir && " .
++        push @make_install_cmds, "cd $root_dir/$out_dir/$dir && " .
+         "\$(MAKE) install$extra_opts";
+     }
+ }
+@@ -1256,6 +1262,8 @@ sub usage ($) {
+     my $msg = <<'_EOC_';
+   --help                             this message
+ 
++  --out-dir=DIR                      set the make output dir
++
+   --prefix=PATH                      set the installation prefix (default to /usr/local/openresty)
+ 
+   --with-debug                       enable debug logging
+@@ -1538,13 +1546,13 @@ _EOC_
+ }
+ 
+ sub gen_makefile {
+-    if (-f 'Makefile') {
+-        unlink 'Makefile' or
+-            die "ERROR: failed to remove existing Makefile: $!\n";
++    if (-f "Makefile-$out_dir") {
++	unlink "Makefile-$out_dir" or
++	    die "ERROR: failed to remove existing Makefile-$out_dir: $!\n";
+     }
+ 
+-    open my $out, ">Makefile" or
+-        die "Cannot open Makefile for writing: $!\n";
++    open my $out, ">Makefile-$out_dir" or
++        die "Cannot open Makefile-$out_dir for writing: $!\n";
+ 
+     for my $line (@extra_make_env) {
+         print $out "export $line\n";
+@@ -1561,7 +1569,7 @@ sub gen_makefile {
+ 
+     print $out "install: all\n\t" . join("\n\t", @make_install_cmds) . "\n\n";
+ 
+-    print $out "clean:\n\trm -rf build *.exe *.dll openresty-*\n";
++    print $out "clean:\n\trm -rf $out_dir *.exe *.dll openresty-*\n";
+ 
+     close $out;
+ }
+-- 
+2.27.0
+
