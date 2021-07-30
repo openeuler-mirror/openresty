@@ -182,45 +182,6 @@ BuildArch:      noarch
 %description opm
 This package provides the client side tool, opm, for OpenResty Pakcage Manager (OPM).
 
-%package asan
-Summary:        The clang AddressSanitizer (ASAN) version of OpenRest
-Group:          System Environment/Daemons
-
-BuildRequires:  ccache, make, perl, systemtap-sdt-devel, clang, valgrind-devel
-BuildRequires:  openresty-zlib-asan-devel >= 1.2.11-6
-BuildRequires:  openresty-openssl111-asan-devel >= 1.1.1h-1
-BuildRequires:  openresty-pcre-asan-devel >= 8.44-1
-Requires:       openresty-zlib-asan >= 1.2.11-6
-Requires:       openresty-openssl111-asan >= 1.1.1h-1
-Requires:       openresty-pcre-asan >= 8.44-1
-
-AutoReqProv:	no
-
-%define orprefix_asan		%{_usr}/local/openresty-asan
-%define openssl_prefix_asan	%{_usr}/local/openresty-asan/openssl111
-%define zlib_prefix_asan	%{_usr}/local/openresty-asan/zlib
-%define pcre_prefix_asan	%{_usr}/local/openresty-asan/pcre
-
-%description asan
-This package contains a clang AddressSanitizer version of the core server
-for OpenResty with
-clang's AddressSanitizer built in. Built for development purposes only.
-
-DO NOT USE THIS PACKAGE IN PRODUCTION!
-
-OpenResty is a full-fledged web platform by integrating the standard Nginx
-core, LuaJIT, many carefully written Lua libraries, lots of high quality
-3rd-party Nginx modules, and most of their external dependencies. It is
-designed to help developers easily build scalable web applications, web
-services, and dynamic web gateways.
-
-By taking advantage of various well-designed Nginx modules (most of which
-are developed by the OpenResty team themselves), OpenResty effectively
-turns the nginx server into a powerful web app server, in which the web
-developers can use the Lua programming language to script various existing
-nginx C modules and Lua modules and construct extremely high-performance
-web applications that are capable to handle 10K ~ 1000K+ connections in
-a single box.
 
 %package debug
 Summary:        The debug version of OpenResty
@@ -300,45 +261,6 @@ a single box.
 
 make -f 'Makefile-build' %{?_smp_mflags}
 
-export ASAN_OPTIONS=detect_leaks=0
-./configure \
-    --out-dir='build-asan' \
-    --prefix="%{orprefix_asan}" \
-    --with-debug \
-    --with-cc="ccache clang -fsanitize=address -fcolor-diagnostics -Qunused-arguments" \
-    --with-cc-opt="-I%{zlib_prefix_asan}/include -I%{pcre_prefix_asan}/include -I%{openssl_prefix_asan}/include -O1" \
-    --with-ld-opt="-L%{zlib_prefix_asan}/lib -L%{pcre_prefix_asan}/lib -L%{openssl_prefix_asan}/lib -Wl,-rpath,%{zlib_prefix_asan}/lib:%{pcre_prefix_asan}/lib:%{openssl_prefix_asan}/lib" \
-    --with-pcre-jit \
-    --without-http_rds_json_module \
-    --without-http_rds_csv_module \
-    --without-lua_rds_parser \
-    --with-stream \
-    --with-stream_ssl_module \
-    --with-stream_ssl_preread_module \
-    --with-http_v2_module \
-    --without-mail_pop3_module \
-    --without-mail_imap_module \
-    --without-mail_smtp_module \
-    --with-http_stub_status_module \
-    --with-http_realip_module \
-    --with-http_addition_module \
-    --with-http_auth_request_module \
-    --with-http_secure_link_module \
-    --with-http_random_index_module \
-    --with-http_gzip_static_module \
-    --with-http_sub_module \
-    --with-http_dav_module \
-    --with-http_flv_module \
-    --with-http_mp4_module \
-    --with-http_gunzip_module \
-    --with-threads \
-    --with-poll_module \
-    --with-compat \
-    --with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT -DLUAJIT_USE_VALGRIND -O1 -fno-omit-frame-pointer' \
-    --with-no-pool-patch \
-    %{?_smp_mflags}
-
-make -f 'Makefile-build-asan' %{?_smp_mflags}
 
 ./configure \
     --out-dir='build-debug' \
@@ -405,22 +327,6 @@ mkdir -p %{buildroot}/etc/init.d
 
 # to silence the check-rpath error
 export QA_RPATHS=$[ 0x0002 ]
-
-
-make install -f 'Makefile-build-asan' DESTDIR=%{buildroot}
-
-rm -rf %{buildroot}%{orprefix_asan}/luajit/share/man
-rm -rf %{buildroot}%{orprefix_asan}/luajit/lib/libluajit-5.1.a
-rm -rf %{buildroot}%{orprefix_asan}/bin/resty
-rm -rf %{buildroot}%{orprefix_asan}/bin/restydoc
-rm -rf %{buildroot}%{orprefix_asan}/bin/restydoc-index
-rm -rf %{buildroot}%{orprefix_asan}/bin/md2pod.pl
-rm -rf %{buildroot}%{orprefix_asan}/bin/opm
-rm -rf %{buildroot}%{orprefix_asan}/bin/nginx-xml2pod
-rm -rf %{buildroot}%{orprefix_asan}/pod/*
-rm -rf %{buildroot}%{orprefix_asan}/resty.index
-
-ln -sf %{orprefix_asan}/nginx/sbin/nginx %{buildroot}/usr/bin/%{name}-asan
 
 
 make install -f 'Makefile-build-debug' DESTDIR=%{buildroot}
@@ -519,19 +425,6 @@ fi
 %{orprefix}/site/manifest/
 %{orprefix}/site/pod/
 
-%files asan
-%defattr(-,root,root,-)
-
-/usr/bin/%{name}-asan
-%{orprefix_asan}/bin/openresty
-%{orprefix_asan}/site/lualib/
-%{orprefix_asan}/luajit/*
-%{orprefix_asan}/lualib/*
-%{orprefix_asan}/nginx/html/*
-%{orprefix_asan}/nginx/logs/
-%{orprefix_asan}/nginx/sbin/*
-%config(noreplace) %{orprefix_asan}/nginx/conf/*
-%{orprefix_asan}//COPYRIGHT
 
 %files debug
 %defattr(-,root,root,-)
@@ -549,4 +442,4 @@ fi
 
 %changelog
 * Fri Jul 23 2021 Fu Changjie <fu_changjie@qq.com> 1.19.3.1-1
-- Package init with openresty 1.19.3.1.
+- Package init with openresty 1.19.3.1, without asan package
