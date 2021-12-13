@@ -1,6 +1,6 @@
 Name:           openresty
 Version:        1.19.3.1
-Release:        1%{?dist}
+Release:        2
 Summary:        OpenResty, scalable web platform by extending NGINX with Lua
 
 Group:          System Environment/Daemons
@@ -443,5 +443,8 @@ fi
 %{orprefix_debug}/COPYRIGHT
 
 %changelog
+* Mon Dec 13 2021 liweigang <liweiganga@uniontech.com> 1.19.3.1-2
+- delete %dist
+
 * Fri Jul 23 2021 Fu Changjie <fu_changjie@qq.com> 1.19.3.1-1
 - Package init with openresty 1.19.3.1, without asan package
