@@ -1,6 +1,6 @@
 Name:           openresty
-Version:        1.19.3.1
-Release:        2
+Version:        1.21.4.1
+Release:        1
 Summary:        OpenResty, scalable web platform by extending NGINX with Lua
 
 Group:          System Environment/Daemons
@@ -20,6 +20,7 @@ Source1:        openresty.service
 Source2:        openresty.init
 
 Patch1:		0001-add-option-out-dir-on-configure.patch
+Patch2:		0002-add-riscv64-support.patch
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -225,6 +226,9 @@ a single box.
 %setup -q -n "openresty-%{version}"
 
 %patch1 -p1
+%ifarch riscv64
+%patch2 -p1
+%endif
 
 %build
 ./configure \
@@ -443,6 +447,10 @@ fi
 %{orprefix_debug}/COPYRIGHT
 
 %changelog
+* Mon Mar 13 2023 Jingwiw  <wangjingwei@iscas.ac.cn> - 1.21.4.1-1
+- upgrade to 1.21.4.1
+- init riscv luajit support
+
 * Mon Dec 13 2021 liweigang <liweiganga@uniontech.com> 1.19.3.1-2
 - delete %dist
 
