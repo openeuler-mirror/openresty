@@ -1,6 +1,6 @@
 Name:           openresty
 Version:        1.19.3.1
-Release:        2
+Release:        3
 Summary:        OpenResty, scalable web platform by extending NGINX with Lua
 
 Group:          System Environment/Daemons
@@ -230,7 +230,7 @@ a single box.
 ./configure \
     --out-dir='build' \
     --prefix="%{orprefix}" \
-    --with-cc='ccache gcc -fdiagnostics-color=always' \
+    --with-cc='ccache %toolchain -fdiagnostics-color=always' \
     --with-cc-opt="-DNGX_LUA_ABORT_AT_PANIC -I%{zlib_prefix}/include -I%{pcre_prefix}/include -I%{openssl_prefix}/include" \
     --with-ld-opt="-L%{zlib_prefix}/lib -L%{pcre_prefix}/lib -L%{openssl_prefix}/lib -Wl,-rpath,%{zlib_prefix}/lib:%{pcre_prefix}/lib:%{openssl_prefix}/lib" \
     --with-pcre-jit \
@@ -267,7 +267,7 @@ make -f 'Makefile-build' %{?_smp_mflags}
 ./configure \
     --out-dir='build-debug' \
     --prefix="%{orprefix_debug}" \
-    --with-cc='ccache gcc -fdiagnostics-color=always' \
+    --with-cc='ccache %toolchain -fdiagnostics-color=always' \
     --with-debug \
     --with-cc-opt="-I%{zlib_prefix_debug}/include -I%{pcre_prefix_debug}/include -I%{openssl_prefix_debug}/include -O0" \
     --with-ld-opt="-L%{zlib_prefix_debug}/lib -L%{pcre_prefix_debug}/lib -L%{openssl_prefix_debug}/lib -Wl,-rpath,%{zlib_prefix_debug}/lib:%{pcre_prefix_debug}/lib:%{openssl_prefix_debug}/lib" \
@@ -443,6 +443,9 @@ fi
 %{orprefix_debug}/COPYRIGHT
 
 %changelog
+* Thu Apr 20 2023 Xiaoya Huang <huangxiaoya@iscas.ac.cn> - 1.19.3.1-3
+- Fix CC compiler support
+
 * Mon Dec 13 2021 liweigang <liweiganga@uniontech.com> 1.19.3.1-2
 - delete %dist
 
